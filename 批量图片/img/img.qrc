@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>about.ico</file>
+    <file>back.png</file>
+    <file>mark.ico</file>
+    <file>rename.ico</file>
+  </qresource>
+</RCC>
