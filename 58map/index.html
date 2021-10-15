@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"/>
+    <title>house book map</title>
+    <style>
+        html,
+        body,
+        #container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 30px;
+            left: 20px;
+        }
+
+        .control-entry {
+            width: 310px;
+            background-color: rgba(119, 136, 153, 0.8);
+            font-family: fantasy, sans-serif;
+            text-align: left;
+            color: white;
+            overflow: hidden;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .control-input {
+            margin-left: 120px;
+        }
+
+        .control-input input[type='text'] {
+            width: 160px;
+        }
+
+        .control-panel label {
+            float: left;
+            width: 120px;
+        }
+
+        #transfer-panel {
+            position: absolute;
+            background-color: white;
+            max-height: 80%;
+            overflow-y: auto;
+            top: 150px;
+            left: 20px;
+            width: 250px;
+        }
+
+
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<div class="control-panel">
+    <div class="control-entry">
+        <label>输入家庭住址</label>
+        <div class="control-input">
+            <input id="work-location" type="text">
+        </div>
+    </div>
+    <div class="control-entry">
+        <label>导入工作单位地址文件</label>
+        <div class="control-input">
+            <input type="file" name="file" onchange="importRentInfo(this)"/>
+        </div>
+    </div>
+</div>
+<div id="transfer-panel"></div>
+<!-- 加载地图JSAPI脚本 -->
+<script src="https://webapi.amap.com/maps?v=1.4.15&key=2e32cafc756736e374acbd528578fa9f&plugin=AMap.
+ArrivalRange,AMap.Scale,AMap.Geocoder,AMap.Transfer,AMap.Autocomplete"></script>
+<script>
+    var map = new AMap.Map('container', {
+        resizeEnable: true, //是否监控地图容器尺寸变化
+        zoom: 11, //初始化地图层级
+        //center: [106.56347, 29.52311] //初始化地图中心点-cq
+        center: [116.2317, 39.5427]
+    });
+    //经度纬度时间通勤方式
+    var x, y, t, vehicle = "SUBWAY,BUS";
+    var workAddress, workMarker;
+    var rentMarkerArray = [];
+    var polygonArray = [];
+    //路线
+    var amapTransfer;
+    //到达范围
+    var arrivalRange = new AMap.ArrivalRange();
+    //消息窗体
+    var infoWindow = new AMap.InfoWindow({
+        offset: new AMap.Pixel(0, -30)
+    });
+    //地址自动补全对象
+    var auto = new AMap.Autocomplete({
+        //根据ID指定输入内容
+        input: "work-location"
+    });
+    //添加事件监听，选完地址后调用workLocationSelected
+    AMap.event.addListener(auto, "select", workLocationSelected);
+
+    //选择工作地点后触发
+    function workLocationSelected(e) {
+        //更新工作地点，加载到达范围
+        workAddress = e.poi.name;
+        //调用加载1小时到达区域函数
+        loadWorkLocation();
+    }
+
+    //加载工作地点标记
+    function loadWorkMarker(x, y, locationName) {
+        workMarker = new AMap.Marker({
+            map: map,
+            title: locationName,
+            icon: 'http://webapi.amap.com/theme/v1.3/markers/n/mark_r.png',
+            position: [x, y]
+        });
+    }
+
+    //清除已有的到达区域
+    function delWorkLocation() {
+        if (polygonArray) map.remove(polygonArray);
+        if (workMarker) map.remove(workMarker);
+        polygonArray = [];
+    }
+
+    //加载到达范围
+    function loadWorkRange(x, y, t, color, v) {
+        arrivalRange.search([x, y], t, function (status, result) {
+            if (result.bounds) {
+                for (var i = 0; i < result.bounds.length; i++) {
+                    var polygon = new AMap.Polygon({
+                        map: map,
+                        fillColor: color,
+                        fillOpacity: "0.3",
+                        strokeWeight: 1
+                    });
+                    polygon.setPath(result.bounds[i]);
+                    polygonArray.push(polygon);
+                }
+            }
+        }, {
+            policy: v
+        });
+    }
+
+    //加载1小时到达区域
+    function loadWorkLocation() {
+        //清除已有的到达区域
+        delWorkLocation();
+        //创建地址坐标对象
+        var geocoder = new AMap.Geocoder({
+            city: "重庆",
+            radius: 1000
+        })
+        //获取位置
+        geocoder.getLocation(workAddress, function (status, result) {
+            if (status === "complete" && result.info === 'OK') {
+                var geocode = result.geocodes[0];  //地址编码
+                x = geocode.location.getLng();  //经度
+                y = geocode.location.getLat();  //维度
+                //工作地点标记
+                loadWorkMarker(x, y);
+                //加载1小时内到达范围
+                loadWorkRange(x, y, 60, "#3f67a5", vehicle);
+                //地图移动到工作地点位置
+                map.setZoomAndCenter(12, [x, y]);
+            }
+        });
+    }
+
+    // 导入房源信息触发的方法
+    function importRentInfo(fileInfo) {
+        var file = fileInfo.files[0].name;
+        loadRentLocationByFile(file);
+    }
+
+    // 清除现有房源标记
+    function delRentLocation() {
+        if (rentMarkerArray) map.remove(rentMarkerArray);
+        rentMarkerArray = [];
+    }
+    //加载房源位置
+    function loadRentLocationByFile(filename) {
+        delRentLocation();
+        var rent_locations = new Set();
+        $.get(fileName, function (data) {
+            data = data.split("\n");
+            data.forEach(function (item, index) {
+                rent_locations.add(item, split(",")[1]);
+            });
+            rent_locations.forEach(function (element, index) {
+                addMarkerByAddress(element);
+            });
+        });
+    }
+    //添加房源位置标记
+    function addMarkerByAddress(address) {
+        var geocoder = new AMap.Geocoder({
+            city: "重庆",
+            radius: 1000
+        });
+        geocoder.getLocation(address, function (status, result) {
+            if (status === "complete" && result.info === "OK") {
+                var geocode = result.geocodes[0];
+                rentMarker = new AMap.Marker({
+                    map: map,
+                    title: address,
+                    icon: "http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+                    position: [geocode.location.getLng(), geocode.location.getLat()]
+                });
+                rentMarkerArray.push(rentMarker);
+                rentMarker.content = "<div>房源：<a target='_blank'href='http://bj.58.com/" +
+                    "pinpaigongyu/?key=" + address + "'>" + address + "</a><div>"
+                rentMarker.on('click', function (e) {
+                    infoWindow.setContent(e.target.content);
+                    infoWindow.open(map, e.target.getPosition());
+                    if (amapTransfer) amapTransfer.clear();
+                    amapTransfer = new AMap.transfer({
+                        map: map,
+                        policy: AMap.TransferPolicy.LEAST_TIME,
+                        city: "重庆市",
+                        panel: 'transfer-panel'
+                    });
+                    amapTransfer.search([{
+                        keyword: workAddress
+                    }, {
+                        keyword: address
+                    }], function (status, result) {
+                    })
+                });
+            }
+        });
+    }
+</script>
+</body>
+</html>

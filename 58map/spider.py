@@ -8,27 +8,27 @@ def getHtml():
     page = 0
     CSV_FILE = open('collection.csv', 'w', newline='')
     writer = csv.writer(CSV_FILE, dialect='excel')
-    while True:
+    for page in range(0, 25):
         page += 1
         response = requests.get(url.format(page=page))
         response.encoding = 'utf-8'
         html = BeautifulSoup(response.text, 'html.parser')
         house_list = html.select('.list > li')
         print('downloading page' + url.format(page=page))
-        page_a_list = html.find('div', class_='page')
-        if page_a_list is not None:
-            page_a_list = page_a_list.select('span')
-            str_page = str(page_a_list)
-            if '<span>下一页</span>' in str_page:
-                writeFile(house_list, writer)
-            else:
-                writeFile(house_list, writer)
-                CSV_FILE.close()
-                break
-        else:
-            writeFile(house_list, writer)
-            CSV_FILE.close()
-            break
+        # page_a_list = html.find('div', class_='page')
+        # if page_a_list is not None:
+        #     page_a_list = page_a_list.select('span')
+        #     str_page = str(page_a_list)
+        #     if '<span>下一页</span>' in str_page:
+        #         writeFile(house_list, writer)
+        #     else:
+        #         writeFile(house_list, writer)
+        #         CSV_FILE.close()
+        #         break
+        # else:
+        writeFile(house_list, writer)
+        # break
+    CSV_FILE.close()
 
 
 def writeFile(house_list, writer):
