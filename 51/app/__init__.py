@@ -2,6 +2,7 @@ from flask import Flask
 from config import config
 from flask_sqlalchemy import SQLAlchemy
 
+
 db = SQLAlchemy()
 
 
@@ -11,5 +12,6 @@ def create_app(config_name):
     config[config_name].init_app(app)
     db.init_app(app)
     # 注册蓝图
-
+    from app.home import home as home_blueprint
+    app.register_blueprint(home_blueprint)
     return app

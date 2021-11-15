@@ -1,4 +1,4 @@
-from app import home
+from app.home import home
 from app.home.form import RegisterForm
 from app.models import User, Goods, Orders, Cart, OrdersDetail
 from flask import render_template, url_for, redirect, flash, session, request, make_response
@@ -34,5 +34,20 @@ def getVerifyCode():
     font = ImageFont.truetype('app/static/fonts/arial.ttf', 40)
     draw = ImageDraw.Draw(im)
     for item in range(4):
-        draw.text()
+        draw.text((5 + random.randint(-3, 3) + 23 * item, 5 + random.randint(-3, 3)), code[item], rndColor(), font)
+    return im, code
+
+
+@home.route('/code')
+def getCode():
+    image, code = getVerifyCode()
+    buf = BytesIO()
+    image.save(buf, 'jpeg')
+    buf_str = buf.getvalue()
+    # 把buf_str作为response返回前端
+    response = make_response(buf_str)
+    response.headers['content-type'] = 'image/gif'
+    #   验证码存在session内
+    session['image'] = code
+    return response
 
