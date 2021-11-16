@@ -1,4 +1,5 @@
 from app.home import home
+from app import db
 from app.home.form import RegisterForm
 from app.models import User, Goods, Orders, Cart, OrdersDetail
 from flask import render_template, url_for, redirect, flash, session, request, make_response
@@ -38,6 +39,11 @@ def getVerifyCode():
     return im, code
 
 
+@home.route('/')
+def index():
+    return render_template('home/index.html')
+
+
 @home.route('/code')
 def getCode():
     image, code = getVerifyCode()
@@ -51,3 +57,21 @@ def getCode():
     session['image'] = code
     return response
 
+
+@home.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'user_id' in session:
+        return redirect(url_for('home.index'))
+    form = RegisterForm()  # 实例化注册表单
+    if form.validate_on_submit():
+        data = form.data
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            password=generate_password_hash(data['password']),
+            phone=data['phone']
+        )
+        db.session.add(user)
+        db.session.commit()
+        return redirect(url_for('home.index'))
+    return render_template('home/register.html', form=form)
