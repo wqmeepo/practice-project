@@ -41,7 +41,7 @@ def getVerifyCode():
 
 @home.route('/')
 def index():
-    return render_template('home/index.html')
+    return render_template('404/index.html')
 
 
 @home.route('/code')
@@ -61,7 +61,7 @@ def getCode():
 @home.route('/register', methods=['GET', 'POST'])
 def register():
     if 'user_id' in session:
-        return redirect(url_for('home.index'))
+        return redirect(url_for('404.index'))
     form = RegisterForm()  # 实例化注册表单
     if form.validate_on_submit():
         data = form.data
@@ -73,5 +73,5 @@ def register():
         )
         db.session.add(user)
         db.session.commit()
-        return redirect(url_for('home.index'))
-    return render_template('home/register.html', form=form)
+        return redirect(url_for('404.index'))
+    return render_template('404/register.html', form=form)

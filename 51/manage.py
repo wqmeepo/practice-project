@@ -22,7 +22,7 @@ def page_not_found(error):
     '''
     404
     '''
-    return render_template('home/404.html'), 404
+    return render_template('404/404.html'), 404
 
 
 if __name__ == '__main__':
