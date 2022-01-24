@@ -1,5 +1,8 @@
+# _*_ coding:utf-8 _*_
+
 from flask import Blueprint
 
-home = Blueprint('404', __name__)
+home = Blueprint("home",__name__)
 
 import app.home.views
+

@@ -8,7 +8,7 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = '**'
+    SQLALCHEMY_DATABASE_URI =
     DEBUG = True
 
 
